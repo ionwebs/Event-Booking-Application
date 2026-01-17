@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is approved
+    function isApproved() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone authenticated can create their own user doc (on signup)
+      allow create: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.data.status == 'pending' &&
+                      request.resource.data.role == 'user';
+      
+      // Users can read their own document (to check approval status)
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Admins can read all users (for user management panel)
+      // Approved users can also read user list (to find notification recipients)
+      allow read: if isAdmin() || isApproved();
+      
+      // Only admins can update user status and role
+      allow update: if isAdmin();
+      
+      // Users can update their own non-sensitive fields
+      allow update: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'role', 'uid']);
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Teams - only approved users can access
+    match /teams/{teamId} {
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved() && 
+                      (resource.data.owner == request.auth.uid || 
+                       request.auth.uid in resource.data.members);
+      allow delete: if isApproved() && resource.data.owner == request.auth.uid;
+    }
+    
+    // Bookings - only approved users can access
+    match /bookings/{bookingId} {
+      allow read, create, update, delete: if isApproved();
+    }
+    
+    // Custom Fields - only approved users can access
+    match /customFields/{fieldId} {
+      allow read, create, update, delete: if isApproved();
+    }
+    
+    // Notifications
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isApproved() && resource.data.recipientId == request.auth.uid;
+      
+      // Approved users can create notifications (for others)
+      allow create: if isApproved();
+      
+      // Users can update (mark as read) their own notifications
+      allow update: if isApproved() && resource.data.recipientId == request.auth.uid;
+    }
+  }
+}
