@@ -23,11 +23,8 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            // Fetch user's teams
-            const teamsQuery = query(
-                collection(db, 'teams'),
-                where('members', 'array-contains', currentUser.uid)
-            );
+            // Fetch all teams (global visibility)
+            const teamsQuery = query(collection(db, 'teams'));
             const teamsSnapshot = await getDocs(teamsQuery);
             const teamIds = teamsSnapshot.docs.map(doc => doc.id);
 

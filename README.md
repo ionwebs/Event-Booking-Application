@@ -13,6 +13,29 @@ A modern, full-stack event management and booking system built with **React**, *
 *   **📝 Custom Fields API**: defining dynamic fields (Text, Number, Dropdown) for booking forms.
 *   **🔐 Role-Based Access**: Secure approval system with Admin and User roles.
 *   **⚡ Modern UI**: Responsive Glassmorphism design system using pure CSS variables.
+*   **📱 Progressive Web App**: Install on any device - works like a native app, no app store required.
+
+## 📱 Install Like a Native App
+
+**Why download from an app store when you can install directly?**
+
+This is a **Progressive Web App (PWA)**, meaning it works seamlessly across all devices without the friction of traditional app stores.
+
+### ✨ Native App Experience
+- **One-Tap Install**: Add to home screen on iOS, Android, or Desktop
+- **Offline Ready**: Access your bookings even without internet
+- **Push Notifications**: Real-time alerts on iOS 16.4+ and all Android devices
+- **Fast & Lightweight**: No 50MB download - instant access
+- **Auto-Updates**: Always get the latest features without manual updates
+
+### 🚀 Cross-Platform Perfection
+| Platform | Installation | Notifications | Offline Mode |
+|----------|-------------|---------------|--------------|
+| **Android** | ✅ Chrome, Edge, Firefox | ✅ Full Support | ✅ Yes |
+| **iOS 16.4+** | ✅ Safari, Chrome | ✅ Full Support | ✅ Yes |
+| **Desktop** | ✅ Chrome, Edge | ✅ Full Support | ✅ Yes |
+
+**No App Store. No Waiting. Just Install.**
 
 ## 📚 Documentation
 
@@ -100,6 +123,7 @@ We offer professional installation and configuration services to get this system
 - **Auth**: Firebase Authentication
 - **Calendar**: `react-big-calendar`, `date-fns`
 - **Pickers**: `react-datepicker`
+- **PWA**: `vite-plugin-pwa` (Service Worker, Offline Support)
 
 ## 🤝 Contributing
 
