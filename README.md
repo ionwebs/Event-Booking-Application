@@ -89,8 +89,8 @@ We offer professional installation and configuration services to get this system
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/yourusername/booking-app.git
-    cd booking-app
+    git clone https://github.com/ionwebs/Event-Booking-Application.git
+    cd Event-Booking-Application
     ```
 
 2.  **Install Dependencies**

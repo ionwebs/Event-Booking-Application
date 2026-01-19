@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, NavLink } from 'react-router-dom';
+import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { db } from '../../firebase-config';
 
 import { useNotifications } from '../../context/NotificationContext';
+import EventDetailsModal from '../Booking/EventDetailsModal';
 import './Navbar.css';
 import './Notification.css';
 import { formatDateForDisplay, formatTimeTo12Hour } from '../../utils/dateUtils';
@@ -14,6 +17,39 @@ const Navbar = () => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    // Event details modal state
+    const [selectedEventBooking, setSelectedEventBooking] = useState(null);
+    const [teams, setTeams] = useState([]);
+    const [customFields, setCustomFields] = useState([]);
+    const [loadingEventDetails, setLoadingEventDetails] = useState(false);
+
+    // Fetch teams and custom fields on mount
+    useEffect(() => {
+        fetchTeamsAndCustomFields();
+    }, []);
+
+    const fetchTeamsAndCustomFields = async () => {
+        try {
+            // Fetch teams
+            const teamsSnapshot = await getDocs(collection(db, 'teams'));
+            const teamsData = teamsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setTeams(teamsData);
+
+            // Fetch custom fields
+            const fieldsSnapshot = await getDocs(collection(db, 'customFields'));
+            const fieldsData = fieldsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setCustomFields(fieldsData);
+        } catch (error) {
+            console.error('Error fetching teams/custom fields:', error);
+        }
+    };
+
     const formatNotificationTime = (date) => {
         if (!date) return '';
         const now = new Date();
@@ -23,6 +59,35 @@ const Navbar = () => {
         if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
         if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
         return formatDateForDisplay(date.toISOString().split('T')[0]);
+    };
+
+    const handleNotificationClick = async (notif) => {
+        // Mark as read
+        markAsRead(notif.id);
+
+        // If notification has a bookingId, fetch and show event details
+        if (notif.bookingId) {
+            setLoadingEventDetails(true);
+            try {
+                const bookingDoc = await getDoc(doc(db, 'bookings', notif.bookingId));
+                if (bookingDoc.exists()) {
+                    const bookingData = {
+                        id: bookingDoc.id,
+                        ...bookingDoc.data()
+                    };
+                    setSelectedEventBooking(bookingData);
+                    setShowNotifications(false); // Close notification dropdown
+                } else {
+                    // Booking was deleted
+                    alert('This event has been deleted and is no longer available.');
+                }
+            } catch (error) {
+                console.error('Error fetching booking details:', error);
+                alert('Failed to load event details. Please try again.');
+            } finally {
+                setLoadingEventDetails(false);
+            }
+        }
     };
 
     const handleLogout = async () => {
@@ -114,14 +179,18 @@ const Navbar = () => {
                                         notifications.map(notif => (
                                             <div
                                                 key={notif.id}
-                                                className={`notification-item ${!notif.read ? 'unread' : ''}`}
-                                                onClick={() => markAsRead(notif.id)}
+                                                className={`notification-item ${!notif.read ? 'unread' : ''} ${notif.bookingId ? 'clickable' : ''}`}
+                                                onClick={() => handleNotificationClick(notif)}
+                                                style={{ cursor: notif.bookingId ? 'pointer' : 'default' }}
                                             >
                                                 <div className="notification-item-header">
                                                     <span className="notification-title">{notif.title}</span>
                                                     <span className="notification-time">{formatNotificationTime(notif.createdAt)}</span>
                                                 </div>
                                                 <p className="notification-message">{notif.message}</p>
+                                                {notif.bookingId && (
+                                                    <span className="notification-view-hint">Click to view event details</span>
+                                                )}
                                             </div>
                                         ))
                                     )}
@@ -166,6 +235,23 @@ const Navbar = () => {
                     )}
                 </div>
             </div>
+
+            {/* Event Details Modal */}
+            {selectedEventBooking && (
+                <EventDetailsModal
+                    booking={selectedEventBooking}
+                    teams={teams}
+                    customFields={customFields}
+                    onClose={() => setSelectedEventBooking(null)}
+                />
+            )}
+
+            {/* Loading overlay for fetching event details */}
+            {loadingEventDetails && (
+                <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
+                    <div className="spinner" style={{ margin: 'auto' }}></div>
+                </div>
+            )}
         </nav>
     );
 };

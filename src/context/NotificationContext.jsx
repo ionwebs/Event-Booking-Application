@@ -13,7 +13,12 @@ export const NotificationProvider = ({ children }) => {
     const { currentUser } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [permission, setPermission] = useState(Notification.permission);
+    const [permission, setPermission] = useState(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            return Notification.permission;
+        }
+        return 'denied'; // Safe default for unsupported browsers
+    });
 
     // Request browser permission
     const requestPermission = async () => {
@@ -29,6 +34,12 @@ export const NotificationProvider = ({ children }) => {
 
     // Send browser notification
     const sendBrowserNotification = (title, body) => {
+        // Add safety check for browsers without Notification API
+        if (!('Notification' in window)) {
+            console.log('Browser notifications not supported');
+            return;
+        }
+
         if (permission === 'granted') {
             new Notification(title, {
                 body,
