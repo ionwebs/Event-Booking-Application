@@ -188,7 +188,27 @@ npm run dev
 
 The application should now be running at `http://localhost:5173`
 
----
+### Step 6: Production Build
+
+When deploying to production (e.g., Firebase Hosting), you need to ensure the correct environment variables are used.
+
+1.  **Create Production Config**:
+    Create a `.env.production` file (use `.env.production.example` as a template).
+    ```bash
+    cp .env.production.example .env.production
+    ```
+
+2.  **Add Production Keys**:
+    Fill in your **production** Firebase project keys in `.env.production`.
+
+3.  **Build the App**:
+    ```bash
+    npm run build
+    ```
+    This generates a `dist` folder containing your production-ready app.
+
+4.  **Deploy**:
+    Deploy the contents of the `dist` folder to your hosting provider.
 
 ## Database Initialization
 
@@ -361,6 +381,17 @@ The project already includes `firebase-messaging-sw.js` in the `public` folder. 
 - Add a support email address
 - Click **Save**
 - Restart your development server
+
+### Issue: Blank Page with "authorize" in URL (Production)
+
+**Symptoms**: User sees a blank/black page on `https://your-app.firebaseapp.com/__/auth/handler`
+
+**Solution**:
+1.  Go to **Google Cloud Console** > **APIs & Services** > **Credentials**
+2.  Find your **OAuth 2.0 Web Client ID**
+3.  Add the callback URL to **Authorized redirect URIs**:
+    - `https://your-app-id.firebaseapp.com/__/auth/handler`
+4.  Save and wait 5 minutes.
 
 ### Issue: "API key not valid"
 
