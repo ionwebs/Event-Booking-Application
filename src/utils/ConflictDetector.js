@@ -35,14 +35,23 @@ export const timeRangesOverlap = (start1, end1, start2, end2) => {
 export const checkBookingConflict = (newBooking, existingBookings) => {
     const conflictingBookings = [];
 
+    // Get datetime ranges for new booking
+    // Support both new (startDateTime/endDateTime) and old (date/startTime/endTime) formats
+    let newStart, newEnd;
+
+    if (newBooking.startDateTime && newBooking.endDateTime) {
+        // New format: use datetime objects
+        newStart = new Date(newBooking.startDateTime);
+        newEnd = new Date(newBooking.endDateTime);
+    } else {
+        // Old format: construct from date + time
+        newStart = new Date(`${newBooking.date}T${newBooking.startTime}`);
+        newEnd = new Date(`${newBooking.date}T${newBooking.endTime}`);
+    }
+
     for (const booking of existingBookings) {
         // Skip if different team (different teams can book same date/time)
         if (booking.teamId !== newBooking.teamId) {
-            continue;
-        }
-
-        // Skip if different date
-        if (booking.date !== newBooking.date) {
             continue;
         }
 
@@ -51,15 +60,21 @@ export const checkBookingConflict = (newBooking, existingBookings) => {
             continue;
         }
 
-        // Check for time overlap
-        const hasTimeConflict = timeRangesOverlap(
-            newBooking.startTime,
-            newBooking.endTime,
-            booking.startTime,
-            booking.endTime
-        );
+        // Get datetime ranges for existing booking
+        let existingStart, existingEnd;
 
-        if (hasTimeConflict) {
+        if (booking.startDateTime && booking.endDateTime) {
+            // New format: use datetime objects
+            existingStart = booking.startDateTime.toDate ? booking.startDateTime.toDate() : new Date(booking.startDateTime);
+            existingEnd = booking.endDateTime.toDate ? booking.endDateTime.toDate() : new Date(booking.endDateTime);
+        } else {
+            // Old format: construct from date + time
+            existingStart = new Date(`${booking.date}T${booking.startTime}`);
+            existingEnd = new Date(`${booking.date}T${booking.endTime}`);
+        }
+
+        // Check datetime overlap: events overlap if start1 < end2 AND end1 > start2
+        if (newStart < existingEnd && newEnd > existingStart) {
             conflictingBookings.push(booking);
         }
     }

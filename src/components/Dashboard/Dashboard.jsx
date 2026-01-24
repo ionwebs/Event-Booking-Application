@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase-config';
 import Navbar from '../Layout/Navbar';
+import EventDetailsModal from '../Booking/EventDetailsModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -16,9 +17,13 @@ const Dashboard = () => {
     });
     const [recentBookings, setRecentBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [teams, setTeams] = useState([]);
+    const [customFields, setCustomFields] = useState([]);
 
     useEffect(() => {
         fetchDashboardData();
+        fetchCustomFields();
     }, [currentUser]);
 
     const fetchDashboardData = async () => {
@@ -26,13 +31,18 @@ const Dashboard = () => {
             // Fetch all teams (global visibility)
             const teamsQuery = query(collection(db, 'teams'));
             const teamsSnapshot = await getDocs(teamsQuery);
+            const teamsData = teamsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setTeams(teamsData);
             const teamIds = teamsSnapshot.docs.map(doc => doc.id);
 
             // Fetch all bookings and filter in-memory to avoid index requirement
             if (teamIds.length > 0) {
                 const bookingsQuery = query(
                     collection(db, 'bookings'),
-                    orderBy('date', 'desc')
+                    orderBy('startDateTime', 'asc') // Ascending to show upcoming events first
                 );
                 const bookingsSnapshot = await getDocs(bookingsQuery);
 
@@ -42,7 +52,13 @@ const Dashboard = () => {
                     ...doc.data()
                 }));
 
-                const userTeamBookings = allBookings.filter(booking =>
+                // Filter out archived events (treat missing isArchived as false)
+                const activeBookings = allBookings.filter(booking => {
+                    const isArchived = booking.isArchived || false;
+                    return !isArchived;
+                });
+
+                const userTeamBookings = activeBookings.filter(booking =>
                     teamIds.includes(booking.teamId)
                 );
 
@@ -50,8 +66,17 @@ const Dashboard = () => {
                 const recentBookings = userTeamBookings.slice(0, 5);
 
                 // Calculate stats
-                const today = new Date().toISOString().split('T')[0];
-                const upcoming = userTeamBookings.filter(b => b.date >= today);
+                const today = new Date();
+                const upcoming = userTeamBookings.filter(b => {
+                    // Use startDateTime if available, otherwise fall back to date
+                    if (b.startDateTime) {
+                        const startDT = b.startDateTime.toDate ? b.startDateTime.toDate() : new Date(b.startDateTime);
+                        return startDT >= today;
+                    } else {
+                        const dateStr = b.date;
+                        return dateStr >= today.toISOString().split('T')[0];
+                    }
+                });
 
                 setStats({
                     totalBookings: userTeamBookings.length,
@@ -84,6 +109,19 @@ const Dashboard = () => {
         const ampm = hour >= 12 ? 'PM' : 'AM';
         const displayHour = hour % 12 || 12;
         return `${displayHour}:${minutes} ${ampm}`;
+    };
+
+    const fetchCustomFields = async () => {
+        try {
+            const fieldsSnapshot = await getDocs(collection(db, 'customFields'));
+            const fieldsData = fieldsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setCustomFields(fieldsData);
+        } catch (err) {
+            console.error('Error fetching custom fields:', err);
+        }
     };
 
     return (
@@ -205,6 +243,19 @@ const Dashboard = () => {
                                                 <div className="booking-team">
                                                     <span className="badge badge-primary">{booking.teamId}</span>
                                                 </div>
+                                                <div className="booking-actions">
+                                                    <button
+                                                        className="btn btn-secondary btn-sm"
+                                                        onClick={() => setSelectedBooking(booking)}
+                                                        title="View event details"
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                        View
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -214,6 +265,21 @@ const Dashboard = () => {
                     </>
                 )}
             </div>
+
+            {/* Event Details Modal */}
+            {selectedBooking && (
+                <EventDetailsModal
+                    booking={selectedBooking}
+                    teams={teams}
+                    customFields={customFields}
+                    onClose={() => setSelectedBooking(null)}
+                    onEdit={(id) => navigate(`/booking/edit/${id}`)}
+                    onViewInCalendar={() => navigate('/calendar')}
+                    showEditButton={true}
+                    showDeleteButton={false}
+                    showViewInCalendarButton={true}
+                />
+            )}
         </div>
     );
 };

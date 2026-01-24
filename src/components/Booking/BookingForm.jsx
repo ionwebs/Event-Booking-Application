@@ -17,7 +17,7 @@ import { db } from '../../firebase-config';
 import Navbar from '../Layout/Navbar';
 import TeamSelector from '../Teams/TeamSelector';
 import { checkBookingConflict, formatConflictMessage } from '../../utils/ConflictDetector';
-import { formatDateToISO, getTodayISO, formatTimeTo12Hour } from '../../utils/dateUtils';
+import { formatDateToISO, getTodayISO, formatTimeTo12Hour, formatDuration, isSameDay } from '../../utils/dateUtils';
 import DatePicker from 'react-datepicker';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -35,10 +35,17 @@ const BookingForm = () => {
     // Form state
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('');
-    const [date, setDate] = useState(getTodayISO());
-    const [isWholeDay, setIsWholeDay] = useState(true);
-    const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('17:00');
+    const [startDateTime, setStartDateTime] = useState(() => {
+        const now = new Date();
+        now.setHours(9, 0, 0, 0);
+        return now;
+    });
+    const [endDateTime, setEndDateTime] = useState(() => {
+        const now = new Date();
+        now.setHours(17, 0, 0, 0);
+        return now;
+    });
+    const [isAllDay, setIsAllDay] = useState(false);
     const [eventName, setEventName] = useState('');
     const [description, setDescription] = useState('');
     const [customFields, setCustomFields] = useState([]);
@@ -63,10 +70,10 @@ const BookingForm = () => {
 
     useEffect(() => {
         // Check for conflicts whenever relevant fields change
-        if (selectedTeam && date) {
+        if (selectedTeam && startDateTime && endDateTime) {
             checkForConflicts();
         }
-    }, [selectedTeam, date, startTime, endTime, isWholeDay]);
+    }, [selectedTeam, startDateTime, endDateTime]);
 
     const fetchBookingData = async () => {
         try {
@@ -74,10 +81,21 @@ const BookingForm = () => {
             if (bookingDoc.exists()) {
                 const data = bookingDoc.data();
                 setSelectedTeam(data.teamId);
-                setDate(data.date);
-                setIsWholeDay(data.isWholeDay);
-                setStartTime(data.startTime);
-                setEndTime(data.endTime);
+
+                // Handle both new and old data formats
+                if (data.startDateTime && data.endDateTime) {
+                    // New format: use datetime fields
+                    setStartDateTime(data.startDateTime.toDate());
+                    setEndDateTime(data.endDateTime.toDate());
+                } else {
+                    // Old format: construct from date + time
+                    const start = new Date(`${data.date}T${data.startTime}`);
+                    const end = new Date(`${data.date}T${data.endTime}`);
+                    setStartDateTime(start);
+                    setEndDateTime(end);
+                }
+
+                setIsAllDay(data.isWholeDay || false);
                 setEventName(data.eventName);
                 setDescription(data.description || '');
                 setCustomFieldValues(data.customFieldValues || {});
@@ -144,10 +162,8 @@ const BookingForm = () => {
         const newBooking = {
             id: isEditMode ? id : null, // Exclude self when editing
             teamId: selectedTeam,
-            date: date,
-            startTime: isWholeDay ? '00:00' : startTime,
-            endTime: isWholeDay ? '23:59' : endTime,
-            isWholeDay: isWholeDay
+            startDateTime: startDateTime,
+            endDateTime: endDateTime
         };
 
         const { hasConflict, conflictingBookings } = checkBookingConflict(
@@ -227,6 +243,11 @@ const BookingForm = () => {
             return;
         }
 
+        if (endDateTime <= startDateTime) {
+            setError('End date/time must be after start date/time');
+            return;
+        }
+
         if (conflictWarning) {
             if (!window.confirm('This booking conflicts with existing bookings. Do you want to proceed anyway?')) {
                 return;
@@ -238,13 +259,18 @@ const BookingForm = () => {
         try {
             const bookingData = {
                 teamId: selectedTeam,
-                date: date,
-                isWholeDay: isWholeDay,
-                startTime: isWholeDay ? '00:00' : startTime,
-                endTime: isWholeDay ? '23:59' : endTime,
+                // New datetime fields
+                startDateTime: startDateTime,
+                endDateTime: endDateTime,
+                // Backward compatibility fields
+                date: format(startDateTime, 'yyyy-MM-dd'),
+                startTime: format(startDateTime, 'HH:mm'),
+                endTime: format(endDateTime, 'HH:mm'),
+                isWholeDay: isAllDay,
                 eventName: eventName.trim(),
                 description: description.trim(),
                 customFieldValues: customFieldValues,
+                isArchived: false, // Default to not archived
                 updatedAt: new Date()
             };
 
@@ -391,69 +417,91 @@ const BookingForm = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">
-                                Date
-                                <span style={{ color: 'var(--color-error)' }}> *</span>
-                            </label>
-                            <DatePicker
-                                selected={date ? parseISO(date) : new Date()}
-                                onChange={(d) => setDate(format(d, 'yyyy-MM-dd'))}
-                                minDate={new Date()}
-                                dateFormat="MMMM d, yyyy"
-                                className="custom-datepicker-input"
-                                wrapperClassName="react-datepicker-wrapper"
-                                required
-                                disabled={loading}
-                            />
-                        </div>
-
-                        <div className="form-group">
                             <label className="form-check">
                                 <input
                                     type="checkbox"
                                     className="form-check-input"
-                                    checked={isWholeDay}
-                                    onChange={(e) => setIsWholeDay(e.target.checked)}
+                                    checked={isAllDay}
+                                    onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setIsAllDay(checked);
+                                        if (checked) {
+                                            // Set to all day (00:00 to 23:59 same day)
+                                            const start = new Date(startDateTime);
+                                            start.setHours(0, 0, 0, 0);
+                                            const end = new Date(start);
+                                            end.setHours(23, 59, 0, 0);
+                                            setStartDateTime(start);
+                                            setEndDateTime(end);
+                                        }
+                                    }}
                                     disabled={loading}
                                 />
-                                <span>Whole Day Booking</span>
+                                <span>All Day Event</span>
                             </label>
                         </div>
 
-                        {!isWholeDay && (
-                            <div className="time-selection">
-                                <div className="form-group">
-                                    <label className="form-label">Start Time</label>
-                                    <DatePicker
-                                        selected={parse(startTime, 'HH:mm', new Date())}
-                                        onChange={(d) => setStartTime(format(d, 'HH:mm'))}
-                                        showTimeSelect
-                                        showTimeSelectOnly
-                                        timeIntervals={15}
-                                        timeCaption="Time"
-                                        dateFormat="h:mm aa"
-                                        className="custom-datepicker-input custom-timepicker-input"
-                                        wrapperClassName="react-datepicker-wrapper"
-                                        disabled={loading}
-                                        required
-                                    />
-                                </div>
+                        <div className="datetime-selection">
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Start Date & Time
+                                    <span style={{ color: 'var(--color-error)' }}> *</span>
+                                </label>
+                                <DatePicker
+                                    selected={startDateTime}
+                                    onChange={(date) => {
+                                        setStartDateTime(date);
+                                        // Ensure end is after start
+                                        if (date >= endDateTime) {
+                                            const newEnd = new Date(date);
+                                            newEnd.setHours(date.getHours() + 1);
+                                            setEndDateTime(newEnd);
+                                        }
+                                    }}
+                                    showTimeSelect={!isAllDay}
+                                    timeIntervals={15}
+                                    timeCaption="Time"
+                                    dateFormat={isAllDay ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
+                                    minDate={new Date()}
+                                    className="custom-datepicker-input"
+                                    wrapperClassName="react-datepicker-wrapper"
+                                    disabled={loading}
+                                    required
+                                />
+                            </div>
 
-                                <div className="form-group">
-                                    <label className="form-label">End Time</label>
-                                    <DatePicker
-                                        selected={parse(endTime, 'HH:mm', new Date())}
-                                        onChange={(d) => setEndTime(format(d, 'HH:mm'))}
-                                        showTimeSelect
-                                        showTimeSelectOnly
-                                        timeIntervals={15}
-                                        timeCaption="Time"
-                                        dateFormat="h:mm aa"
-                                        className="custom-datepicker-input custom-timepicker-input"
-                                        wrapperClassName="react-datepicker-wrapper"
-                                        disabled={loading}
-                                        required
-                                    />
+                            <div className="form-group">
+                                <label className="form-label">
+                                    End Date & Time
+                                    <span style={{ color: 'var(--color-error)' }}> *</span>
+                                </label>
+                                <DatePicker
+                                    selected={endDateTime}
+                                    onChange={(date) => setEndDateTime(date)}
+                                    showTimeSelect={!isAllDay}
+                                    timeIntervals={15}
+                                    timeCaption="Time"
+                                    dateFormat={isAllDay ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
+                                    minDate={startDateTime}
+                                    className="custom-datepicker-input"
+                                    wrapperClassName="react-datepicker-wrapper"
+                                    disabled={loading}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Duration Display */}
+                        {startDateTime && endDateTime && endDateTime > startDateTime && (
+                            <div className="form-group">
+                                <div className="duration-display">
+                                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                    </svg>
+                                    <span>Duration: {formatDuration(startDateTime, endDateTime)}</span>
+                                    {!isSameDay(startDateTime, endDateTime) && (
+                                        <span className="multi-day-badge">Multi-day event</span>
+                                    )}
                                 </div>
                             </div>
                         )}

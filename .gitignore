@@ -24,10 +24,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables (keep secrets safe!)
 .env
-.env.local
-.env.production
+# Note: .env.example should be committed (template only, no secrets)
 
 # Firebase
 firebase-debug.log

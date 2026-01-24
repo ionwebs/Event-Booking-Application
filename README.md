@@ -9,7 +9,9 @@ A modern, full-stack event management and booking system built with **React**, *
 
 *   **📅 Interactive Calendar**: Drag-and-drop capability, Month/Week/Day views, and glassmorphism UI.
 *   **🔔 Real-Time Notifications**: Instant in-app alerts and browser push notifications for booking updates.
-*   **👥 Global Team Management**: Create teams and manage bookings across the entire organization.
+*   **� Event Archiving**: Keep your calendar clean by archiving past events, with a dedicated view to access history.
+*   **📊 Enhanced Dashboard**: Quick access to recent bookings with detailed views and upcoming event stats.
+*   **�👥 Global Team Management**: Create teams and manage bookings across the entire organization.
 *   **📝 Custom Fields API**: defining dynamic fields (Text, Number, Dropdown) for booking forms.
 *   **🔐 Role-Based Access**: Secure approval system with Admin and User roles.
 *   **⚡ Modern UI**: Responsive Glassmorphism design system using pure CSS variables.
@@ -113,7 +115,7 @@ We offer professional installation and configuration services to get this system
     ```bash
     npm run dev
     ```
-    Access the app at `http://localhost:5173`.
+    Access the app at `http://localhost:3000`.
 
 ## 🛠️ Tech Stack
 

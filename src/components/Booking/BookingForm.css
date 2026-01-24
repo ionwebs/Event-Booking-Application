@@ -41,6 +41,37 @@
     gap: var(--spacing-lg);
 }
 
+.datetime-selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.duration-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-elevated);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.duration-display svg {
+    color: var(--color-primary);
+}
+
+.multi-day-badge {
+    margin-left: var(--spacing-sm);
+    padding: 2px var(--spacing-sm);
+    background: var(--color-primary);
+    color: white;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
 .form-help {
     display: block;
     margin-top: var(--spacing-xs);
@@ -71,7 +102,8 @@
         padding: var(--spacing-xl);
     }
 
-    .time-selection {
+    .time-selection,
+    .datetime-selection {
         grid-template-columns: 1fr;
     }
 
