@@ -26,9 +26,13 @@ dist-ssr
 
 # Environment variables (keep secrets safe!)
 .env
+.env.production
 # Note: .env.example should be committed (template only, no secrets)
 
 # Firebase
 firebase-debug.log
 .firebase/*
 .firebase/hosting.ZGlzdA.cache
+.github/copilot-instructions.md
+docs/booking-app-react.code-workspace
+

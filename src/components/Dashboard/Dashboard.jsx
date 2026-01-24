@@ -42,7 +42,7 @@ const Dashboard = () => {
             if (teamIds.length > 0) {
                 const bookingsQuery = query(
                     collection(db, 'bookings'),
-                    orderBy('startDateTime', 'asc') // Ascending to show upcoming events first
+                    orderBy('date', 'asc') // Use 'date' to ensure legacy records (missing startDateTime) are included
                 );
                 const bookingsSnapshot = await getDocs(bookingsQuery);
 
@@ -52,17 +52,22 @@ const Dashboard = () => {
                     ...doc.data()
                 }));
 
-                // Filter out archived events (treat missing isArchived as false)
-                const activeBookings = allBookings.filter(booking => {
+                // Filter and sort bookings
+                const userTeamBookings = allBookings.filter(booking => {
+                    // Filter archived (treat missing as false)
                     const isArchived = booking.isArchived || false;
-                    return !isArchived;
+                    if (isArchived) return false;
+
+                    // Filter team
+                    return teamIds.includes(booking.teamId);
+                }).sort((a, b) => {
+                    // Refine sort client-side using full datetime
+                    const dateA = a.startDateTime ? (a.startDateTime.toDate ? a.startDateTime.toDate() : new Date(a.startDateTime)) : new Date(`${a.date}T${a.startTime}`);
+                    const dateB = b.startDateTime ? (b.startDateTime.toDate ? b.startDateTime.toDate() : new Date(b.startDateTime)) : new Date(`${b.date}T${b.startTime}`);
+                    return dateA - dateB;
                 });
 
-                const userTeamBookings = activeBookings.filter(booking =>
-                    teamIds.includes(booking.teamId)
-                );
-
-                // Get recent bookings (last 5)
+                // Get recent bookings (first 5 since we sorted ascending)
                 const recentBookings = userTeamBookings.slice(0, 5);
 
                 // Calculate stats

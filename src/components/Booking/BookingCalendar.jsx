@@ -208,7 +208,7 @@ const BookingCalendar = () => {
             // Sorting: Active events = ascending (upcoming first), Archived = descending (most recent first)
             const sortOrder = archiveView ? 'desc' : 'asc';
             let bookingsQueryConstraints = [
-                orderBy('startDateTime', sortOrder),
+                orderBy('date', sortOrder),
                 limit(pageSize + 1) // Fetch one extra to check if there's more
             ];
 
@@ -229,7 +229,7 @@ const BookingCalendar = () => {
             } else if (direction === 'prev' && firstVisible) {
                 const reverseSortOrder = archiveView ? 'asc' : 'desc'; // Reverse for pagination
                 bookingsQueryConstraints = [
-                    orderBy('startDateTime', reverseSortOrder),
+                    orderBy('date', reverseSortOrder),
                     limit(pageSize + 1),
                     startAfter(firstVisible)
                 ];
