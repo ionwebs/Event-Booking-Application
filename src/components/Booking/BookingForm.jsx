@@ -80,7 +80,7 @@ const BookingForm = () => {
         if (selectedTeam && startDateTime && endDateTime) {
             checkForConflicts();
         }
-    }, [selectedTeam, startDateTime, endDateTime]);
+    }, [selectedTeam, startDateTime, endDateTime, existingBookings]);
 
     const fetchBookingData = async () => {
         try {
@@ -538,8 +538,13 @@ const BookingForm = () => {
                                     selected={startDateTime}
                                     onChange={(date) => {
                                         setStartDateTime(date);
-                                        // Ensure end is after start
-                                        if (date >= endDateTime) {
+                                        // Handle end date logic
+                                        if (isAllDay) {
+                                            const newEnd = new Date(date);
+                                            newEnd.setHours(23, 59, 59, 999);
+                                            setEndDateTime(newEnd);
+                                        } else if (date >= endDateTime) {
+                                            // Ensure end is after start for non-all-day
                                             const newEnd = new Date(date);
                                             newEnd.setHours(date.getHours() + 1);
                                             setEndDateTime(newEnd);
