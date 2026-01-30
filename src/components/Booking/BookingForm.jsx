@@ -196,7 +196,15 @@ const BookingForm = () => {
             return isSameDay(bStart, startDateTime);
         });
 
-        setConflictingBookingsList(dayEvents);
+        // Combine day events and conflicting bookings (deduplicated)
+        const allRelevantBookings = [...dayEvents];
+        conflictingBookings.forEach(conflict => {
+            if (!allRelevantBookings.find(b => b.id === conflict.id)) {
+                allRelevantBookings.push(conflict);
+            }
+        });
+
+        setConflictingBookingsList(allRelevantBookings);
 
         if (hasConflict) {
             setConflictWarning(formatConflictMessage(conflictingBookings));
