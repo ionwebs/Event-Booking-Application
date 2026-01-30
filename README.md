@@ -13,6 +13,8 @@ A modern, full-stack event management and booking system built with **React**, *
 *   **📊 Enhanced Dashboard**: Quick access to recent bookings with detailed views and upcoming event stats.
 *   **�👥 Global Team Management**: Create teams and manage bookings across the entire organization.
 *   **📝 Custom Fields API**: defining dynamic fields (Text, Number, Dropdown) for booking forms.
+*   **⚠️ Visual Conflict Resolver**: Proactively detects overlaps and shows detailed conflict schedules directly in the form.
+*   **✅ Smart Confirmation**: Beautiful, non-intrusive modal dialogs for critical actions like overriding conflicts.
 *   **🔐 Role-Based Access**: Secure approval system with Admin and User roles.
 *   **⚡ Modern UI**: Responsive Glassmorphism design system using pure CSS variables.
 *   **📱 Progressive Web App**: Install on any device - works like a native app, no app store required.

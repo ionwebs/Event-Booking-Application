@@ -25,6 +25,9 @@ import parseISO from 'date-fns/parseISO';
 import 'react-datepicker/dist/react-datepicker.css';
 import './DatePicker.css';
 import './BookingForm.css';
+// import VoiceManager from './VoiceManager';
+import ConfirmationModal from '../Common/ConfirmationModal';
+import ConflictDetailsModal from './ConflictDetailsModal';
 
 const BookingForm = () => {
     const { currentUser } = useAuth();
@@ -58,6 +61,10 @@ const BookingForm = () => {
     const [success, setSuccess] = useState('');
     const [conflictWarning, setConflictWarning] = useState('');
     const [existingBookings, setExistingBookings] = useState([]);
+    const [conflictingBookingsList, setConflictingBookingsList] = useState([]);
+    // const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+    const [showConflictModal, setShowConflictModal] = useState(false);
+    const [showConflictDetails, setShowConflictDetails] = useState(false);
 
     useEffect(() => {
         fetchTeams();
@@ -171,6 +178,26 @@ const BookingForm = () => {
             existingBookings
         );
 
+        // Filter all events for the same day and team for better context
+        const dayEvents = existingBookings.filter(b => {
+            // Must be same team
+            if (b.teamId !== selectedTeam) return false;
+            // Exclude current booking if editing
+            if (isEditMode && b.id === id) return false;
+
+            // Handle both formats
+            let bStart;
+            if (b.startDateTime) {
+                bStart = b.startDateTime.toDate ? b.startDateTime.toDate() : new Date(b.startDateTime);
+            } else {
+                bStart = new Date(`${b.date}T${b.startTime}`);
+            }
+
+            return isSameDay(bStart, startDateTime);
+        });
+
+        setConflictingBookingsList(dayEvents);
+
         if (hasConflict) {
             setConflictWarning(formatConflictMessage(conflictingBookings));
         } else {
@@ -227,34 +254,26 @@ const BookingForm = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
+    const handleVoiceData = (data) => {
+        if (data.eventName) setEventName(data.eventName);
+        if (data.teamId) setSelectedTeam(data.teamId);
 
-        // Validate
-        if (!selectedTeam) {
-            setError('Please select a team');
-            return;
+        if (data.startDateTime) {
+            setStartDateTime(data.startDateTime);
         }
 
-        if (!eventName.trim()) {
-            setError('Please enter an event name');
-            return;
+        if (data.endDateTime) {
+            setEndDateTime(data.endDateTime);
         }
 
-        if (endDateTime <= startDateTime) {
-            setError('End date/time must be after start date/time');
-            return;
+        if (data.isAllDay !== undefined) {
+            setIsAllDay(data.isAllDay);
         }
+    };
 
-        if (conflictWarning) {
-            if (!window.confirm('This booking conflicts with existing bookings. Do you want to proceed anyway?')) {
-                return;
-            }
-        }
-
+    const executeBooking = async () => {
         setLoading(true);
+        setShowConflictModal(false);
 
         try {
             const bookingData = {
@@ -325,6 +344,35 @@ const BookingForm = () => {
         }
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        // Validate
+        if (!selectedTeam) {
+            setError('Please select a team');
+            return;
+        }
+
+        if (!eventName.trim()) {
+            setError('Please enter an event name');
+            return;
+        }
+
+        if (endDateTime <= startDateTime) {
+            setError('End date/time must be after start date/time');
+            return;
+        }
+
+        if (conflictWarning) {
+            setShowConflictModal(true);
+            return;
+        }
+
+        executeBooking();
+    };
+
     if (initialLoading) {
         return (
             <div className="booking-form-page">
@@ -339,8 +387,44 @@ const BookingForm = () => {
         );
     }
 
+
+
     return (
         <div className="booking-form-page">
+            {/* <VoiceManager
+                isOpen={isVoiceOpen}
+                onClose={() => setIsVoiceOpen(false)}
+                onDataParsed={handleVoiceData}
+                teams={teams}
+            /> */}
+            <ConfirmationModal
+                isOpen={showConflictModal}
+                title="Conflict Warning"
+                message="This booking conflicts with existing bookings. Do you want to proceed anyway?"
+                onConfirm={executeBooking}
+                onCancel={() => setShowConflictModal(false)}
+                confirmText="Yes, Proceed"
+                cancelText="Cancel"
+                type="warning"
+            />
+            <ConflictDetailsModal
+                isOpen={showConflictDetails}
+                onClose={() => setShowConflictDetails(false)}
+                conflicts={conflictingBookingsList.map(booking => ({
+                    ...booking,
+                    isConflict: checkBookingConflict({
+                        id: isEditMode ? id : null,
+                        teamId: selectedTeam,
+                        startDateTime,
+                        endDateTime
+                    }, [booking]).hasConflict
+                })).sort((a, b) => {
+                    const aStart = a.startDateTime?.toDate ? a.startDateTime.toDate() : new Date(a.date + 'T' + a.startTime);
+                    const bStart = b.startDateTime?.toDate ? b.startDateTime.toDate() : new Date(b.date + 'T' + b.startTime);
+                    return aStart - bStart;
+                })}
+                date={startDateTime ? format(startDateTime, 'MMMM d, yyyy') : ''}
+            />
             <Navbar />
 
             <div className="booking-form-container container">
@@ -355,9 +439,20 @@ const BookingForm = () => {
                         Back to Calendar
                     </button>
                     <div>
-                        <h1 className="booking-form-title">
-                            {isEditMode ? 'Edit Booking' : 'Create New Booking'}
-                        </h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <h1 className="booking-form-title">
+                                {isEditMode ? 'Edit Booking' : 'Create New Booking'}
+                            </h1>
+                            {/* <button
+                                type="button"
+                                className="btn btn-icon"
+                                onClick={() => setIsVoiceOpen(true)}
+                                title="Use Voice Input"
+                                style={{ background: '#e3f2fd', color: '#2196f3', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            >
+                                🎙️
+                            </button> */}
+                        </div>
                         <p className="booking-form-subtitle">
                             {isEditMode ? 'Update your event details' : 'Schedule an event for your team'}
                         </p>
@@ -382,14 +477,6 @@ const BookingForm = () => {
                     </div>
                 )}
 
-                {conflictWarning && (
-                    <div className="alert alert-warning">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        {conflictWarning}
-                    </div>
-                )}
 
                 <div className="card booking-form-card">
                     <form onSubmit={handleSubmit}>
@@ -505,6 +592,42 @@ const BookingForm = () => {
                                 </div>
                             </div>
                         )}
+
+                        {conflictWarning && (
+                            <div className="alert alert-warning" style={{ marginTop: '24px', marginBottom: '8px' }}>
+                                <div className="alert-warning-container">
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                            <span style={{ fontWeight: '500' }}>{conflictWarning}</span>
+                                        </div>
+                                        {conflictingBookingsList.length > 0 && (
+                                            <button
+                                                type="button"
+                                                className="btn"
+                                                style={{
+                                                    background: 'var(--color-warning)',
+                                                    border: 'none',
+                                                    color: '#fff',
+                                                    fontWeight: '600',
+                                                    padding: '6px 16px',
+                                                    fontSize: '13px',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                    borderRadius: '6px',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                                onClick={() => setShowConflictDetails(true)}
+                                            >
+                                                Show {conflictingBookingsList.length} Conflict{conflictingBookingsList.length > 1 ? 's' : ''}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
 
                         <div className="form-group">
                             <label className="form-label">Description</label>
