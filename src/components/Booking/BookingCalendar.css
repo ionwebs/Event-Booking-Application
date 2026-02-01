@@ -4,7 +4,7 @@
 }
 
 .calendar-container {
-    padding-top: var(--spacing-2xl);
+    padding-top: calc(var(--spacing-2xl) + var(--spacing-lg));
     padding-bottom: var(--spacing-2xl);
 }
 
@@ -58,6 +58,7 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+
 .filters-header {
     display: flex;
     align-items: center;
@@ -65,6 +66,17 @@
     margin-bottom: var(--spacing-lg);
     padding-bottom: var(--spacing-md);
     border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--transition-fast);
+}
+
+.filters-header:hover {
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    margin: calc(var(--spacing-sm) * -1);
+    margin-bottom: var(--spacing-md);
 }
 
 .filters-header svg {
@@ -78,6 +90,31 @@
     color: var(--color-text-primary);
     margin: 0;
     flex: 1;
+}
+
+.filters-toggle-icon {
+    transition: transform var(--transition-fast);
+    color: var(--color-text-secondary);
+}
+
+.filters-toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+
+.filters-content {
+    animation: slideDown var(--transition-base) ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .btn-clear-all {
@@ -167,6 +204,14 @@
 .pagination-text {
     font-size: var(--font-size-sm);
     color: var(--color-text-tertiary);
+    white-space: nowrap;
+}
+
+.pagination-total {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    margin-left: var(--spacing-sm);
     white-space: nowrap;
 }
 
@@ -435,37 +480,47 @@
 .booking-details-modal {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl);
 }
 
 .detail-row {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background-color var(--transition-fast);
+}
+
+.detail-row:first-of-type {
+    padding-top: 0;
 }
 
 .detail-row:last-of-type {
     border-bottom: none;
+    padding-bottom: 0;
 }
 
 .detail-label {
-    font-size: var(--font-size-xs);
-    font-weight: 600;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     color: var(--color-text-tertiary);
+    opacity: 0.8;
 }
 
 .detail-value {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-lg);
+    font-weight: 500;
     color: var(--color-text-primary);
+    line-height: 1.5;
 }
 
 .detail-description {
-    line-height: 1.6;
+    line-height: 1.7;
     white-space: pre-wrap;
+    color: var(--color-text-secondary);
 }
 
 /* Mobile First Responsive Design */
@@ -561,6 +616,43 @@
 
     .timeline-date-header {
         gap: var(--spacing-md);
+    }
+
+    /* Modal responsive adjustments */
+    .modal-overlay {
+        padding: var(--spacing-sm);
+    }
+
+    .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-container {
+        max-height: 95vh;
+        margin-top: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .modal-header {
+        padding: var(--spacing-lg);
+        padding-bottom: var(--spacing-md);
+    }
+
+    .modal-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .modal-body {
+        padding: var(--spacing-lg);
+    }
+
+    .modal-actions {
+        padding: var(--spacing-md) var(--spacing-lg);
+        flex-direction: column;
+    }
+
+    .modal-actions .btn {
+        width: 100%;
     }
 }
 
@@ -731,7 +823,7 @@
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1100;
     padding: var(--spacing-lg);
@@ -741,17 +833,35 @@
 
 .modal-content {
     width: 100%;
-    max-width: 500px;
-    max-height: calc(100vh - 40px);
+    max-width: 600px;
+    max-height: 90vh;
     margin: auto;
-    overflow-y: auto;
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl);
     box-shadow: var(--shadow-2xl);
     animation: slideUp var(--transition-base) ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-container {
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2xl);
+    animation: slideUp var(--transition-base) ease-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .confirm-modal .modal-content {
@@ -774,15 +884,28 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
 }
 
 .modal-title {
-    font-size: var(--font-size-xl);
-    font-weight: 600;
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
     margin-bottom: 0;
+    background: linear-gradient(135deg, var(--color-primary-light), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
 }
 
 .modal-close {
@@ -802,10 +925,15 @@
 
 .modal-actions {
     display: flex;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
 }
 
 .modal-actions .btn {
     flex: 1;
+    font-weight: 600;
+    padding: var(--spacing-md) var(--spacing-lg);
 }

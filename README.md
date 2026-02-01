@@ -9,9 +9,9 @@ A modern, full-stack event management and booking system built with **React**, *
 
 *   **📅 Interactive Calendar**: Drag-and-drop capability, Month/Week/Day views, and glassmorphism UI.
 *   **🔔 Real-Time Notifications**: Instant in-app alerts and browser push notifications for booking updates.
-*   **� Event Archiving**: Keep your calendar clean by archiving past events, with a dedicated view to access history.
+*   **📦 Event Archiving**: Keep your calendar clean by archiving past events, with a dedicated view to access history.
 *   **📊 Enhanced Dashboard**: Quick access to recent bookings with detailed views and upcoming event stats.
-*   **�👥 Global Team Management**: Create teams and manage bookings across the entire organization.
+*   **👥 Global Team Management**: Create teams and manage bookings across the entire organization.
 *   **📝 Custom Fields API**: defining dynamic fields (Text, Number, Dropdown) for booking forms.
 *   **⚠️ Visual Conflict Resolver**: Proactively detects overlaps and shows detailed conflict schedules directly in the form.
 *   **✅ Smart Confirmation**: Beautiful, non-intrusive modal dialogs for critical actions like overriding conflicts.

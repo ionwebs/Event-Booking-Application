@@ -4,14 +4,14 @@
 }
 
 .dashboard-container {
-    padding-top: var(--spacing-2xl);
+    padding-top: calc(var(--spacing-2xl) + var(--spacing-lg));
     padding-bottom: var(--spacing-2xl);
 }
 
 .dashboard-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: var(--spacing-2xl);
     gap: var(--spacing-lg);
 }

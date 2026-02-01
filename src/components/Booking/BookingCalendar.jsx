@@ -58,6 +58,7 @@ const BookingCalendar = () => {
     // Temporary filter state (before applying)
     const [tempTeamFilter, setTempTeamFilter] = useState('all');
     const [tempCustomFieldFilters, setTempCustomFieldFilters] = useState({});
+    const [filtersExpanded, setFiltersExpanded] = useState(false); // Collapsed by default
 
     // Pagination state
     const [pageSize, setPageSize] = useState(25);
@@ -522,90 +523,103 @@ const BookingCalendar = () => {
 
                 {/* Unified Filter Section */}
                 <div className="calendar-filters-section">
-                    <div className="filters-header">
+                    <div className="filters-header" onClick={() => setFiltersExpanded(!filtersExpanded)}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
                         </svg>
                         <h3 className="filters-title">Filters</h3>
+                        <svg
+                            className={`filters-toggle-icon ${filtersExpanded ? 'expanded' : ''}`}
+                            width="20"
+                            height="20"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
                     </div>
 
-                    <div className="filters-grid">
-                        {/* Team Filter */}
-                        <div className="filter-item">
-                            <label className="filter-item-label">Team</label>
-                            <select
-                                className="filter-select"
-                                value={tempTeamFilter}
-                                onChange={(e) => setTempTeamFilter(e.target.value)}
-                            >
-                                <option value="all">All Teams</option>
-                                {teams.map(team => (
-                                    <option key={team.id} value={team.id}>
-                                        {team.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Custom Field Filters */}
-                        {customFields.map(field => (
-                            <div key={field.id} className="filter-item">
-                                <label className="filter-item-label">{field.name}</label>
-                                {field.type === 'select' ? (
+                    {filtersExpanded && (
+                        <div className="filters-content">
+                            <div className="filters-grid">
+                                {/* Team Filter */}
+                                <div className="filter-item">
+                                    <label className="filter-item-label">Team</label>
                                     <select
                                         className="filter-select"
-                                        value={tempCustomFieldFilters[field.id] || 'all'}
-                                        onChange={(e) => setTempCustomFieldFilters({
-                                            ...tempCustomFieldFilters,
-                                            [field.id]: e.target.value
-                                        })}
+                                        value={tempTeamFilter}
+                                        onChange={(e) => setTempTeamFilter(e.target.value)}
                                     >
-                                        <option value="all">All</option>
-                                        {field.options.map((option, index) => (
-                                            <option key={index} value={option}>
-                                                {option}
+                                        <option value="all">All Teams</option>
+                                        {teams.map(team => (
+                                            <option key={team.id} value={team.id}>
+                                                {team.name}
                                             </option>
                                         ))}
                                     </select>
-                                ) : (
-                                    <input
-                                        type={field.type === 'number' ? 'number' : 'text'}
-                                        className="filter-input"
-                                        placeholder={`Filter by ${field.name}`}
-                                        value={tempCustomFieldFilters[field.id] || ''}
-                                        onChange={(e) => setTempCustomFieldFilters({
-                                            ...tempCustomFieldFilters,
-                                            [field.id]: e.target.value
-                                        })}
-                                    />
+                                </div>
+
+                                {/* Custom Field Filters */}
+                                {customFields.map(field => (
+                                    <div key={field.id} className="filter-item">
+                                        <label className="filter-item-label">{field.name}</label>
+                                        {field.type === 'select' ? (
+                                            <select
+                                                className="filter-select"
+                                                value={tempCustomFieldFilters[field.id] || 'all'}
+                                                onChange={(e) => setTempCustomFieldFilters({
+                                                    ...tempCustomFieldFilters,
+                                                    [field.id]: e.target.value
+                                                })}
+                                            >
+                                                <option value="all">All</option>
+                                                {field.options.map((option, index) => (
+                                                    <option key={index} value={option}>
+                                                        {option}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type={field.type === 'number' ? 'number' : 'text'}
+                                                className="filter-input"
+                                                placeholder={`Filter by ${field.name}`}
+                                                value={tempCustomFieldFilters[field.id] || ''}
+                                                onChange={(e) => setTempCustomFieldFilters({
+                                                    ...tempCustomFieldFilters,
+                                                    [field.id]: e.target.value
+                                                })}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Filter Action Buttons */}
+                            <div className="filter-actions">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleApplyFilters}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                    Apply Filters
+                                </button>
+                                {(tempTeamFilter !== 'all' || Object.keys(tempCustomFieldFilters).some(k => tempCustomFieldFilters[k] && tempCustomFieldFilters[k] !== 'all')) && (
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={handleClearFilters}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                        Clear Filters
+                                    </button>
                                 )}
                             </div>
-                        ))}
-                    </div>
-
-                    {/* Filter Action Buttons */}
-                    <div className="filter-actions">
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleApplyFilters}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Apply Filters
-                        </button>
-                        {(tempTeamFilter !== 'all' || Object.keys(tempCustomFieldFilters).some(k => tempCustomFieldFilters[k] && tempCustomFieldFilters[k] !== 'all')) && (
-                            <button
-                                className="btn btn-secondary"
-                                onClick={handleClearFilters}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                                Clear Filters
-                            </button>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Pagination Controls */}
@@ -625,6 +639,9 @@ const BookingCalendar = () => {
                                 <option value={100}>100</option>
                             </select>
                             <span className="pagination-text">events per page</span>
+                            {totalCount > 0 && (
+                                <span className="pagination-total">• Total: {totalCount} events</span>
+                            )}
                         </div>
 
                         <div className="pagination-buttons">

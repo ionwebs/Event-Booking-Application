@@ -6,7 +6,7 @@
 }
 
 .user-management-container {
-    padding-top: var(--spacing-2xl);
+    padding-top: calc(var(--spacing-2xl) + var(--spacing-lg));
     padding-bottom: var(--spacing-2xl);
 }
 

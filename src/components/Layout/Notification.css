@@ -166,3 +166,17 @@
     margin-top: 4px;
     font-weight: 500;
 }
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 480px) {
+    .notification-dropdown {
+        position: fixed;
+        width: 90vw;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        top: 70px;
+        /* Below navbar */
+        margin-top: 0;
+    }
+}

@@ -1,0 +1,37 @@
+/* Enhanced Badge Styles for Event Details Modal */
+\r\n\r\n.badge {
+    \r\n display: inline-flex;
+    \r\n align-items: center;
+    \r\n padding: var(--spacing-xs) var(--spacing-md);
+    \r\n border-radius: var(--radius-md);
+    \r\n font-size: var(--font-size-sm);
+    \r\n font-weight: 600;
+    \r\n color: white;
+    \r\n box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    \r\n transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    \r\n
+}
+
+\r\n\r\n.badge:hover {
+    \r\n transform: translateY(-1px);
+    \r\n box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    \r\n
+}
+
+\r\n\r\n.multi-day-badge {
+    \r\n display: inline-flex;
+    \r\n align-items: center;
+    \r\n gap: var(--spacing-xs);
+    \r\n padding: 4px var(--spacing-sm);
+    \r\n background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    \r\n color: white;
+    \r\n border-radius: var(--radius-sm);
+    \r\n font-size: var(--font-size-xs);
+    \r\n font-weight: 600;
+    \r\n text-transform: uppercase;
+    \r\n letter-spacing: 0.5px;
+    \r\n box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    \r\n
+}
+
+\r\n
