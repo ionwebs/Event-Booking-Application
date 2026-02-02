@@ -79,7 +79,7 @@ We offer professional installation and configuration services to get this system
 *   **Training**: Walkthrough for your admin team.
 
 
-[**Contact Us for Setup**](mailto:contact@ionwebs.com)
+[**Contact Us for Setup**](#-contact)
 
 ---
 
